@@ -5,3 +5,4 @@ cmake_install.cmake
 Makefile
 CTestTestfile.cmake
 faceblur
+res10_300x300_ssd_iter_140000.caffemodel

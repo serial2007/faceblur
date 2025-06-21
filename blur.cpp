@@ -11,15 +11,26 @@ int blur(cv::Mat& frame, cv::Rect rect)
     if (rect.width <= 20 || rect.height <= 20) return -1;
 	
 	static bool init = true;
-	static int arrlen = frame.cols * frame.rows / 180;
+	static int _frame_rows = frame.rows;
+	static int _frame_cols = frame.cols;
+	static int64_t arrlen;
 	static std::vector<cv::Point2i> arr; 
 	static std::vector<float> pos;
 	static auto _last_time = std::chrono::steady_clock::now();
 	auto _now_time 		   = std::chrono::steady_clock::now();
+	if(_frame_rows != frame.rows || _frame_cols != frame.cols)
+	{
+		init = true;
+		_frame_rows = frame.rows;
+		_frame_cols = frame.cols;
+	}
 	if(init){
 		init = false;
+		arrlen = (int64_t)frame.cols * frame.rows * frame.cols * frame.rows / 180 / 1280 / 720;
 		srand(time(0));
-		for(int i=0; i<arrlen; i++)
+		arr.clear();
+		pos.clear();
+		for(int64_t i=0; i<arrlen; i++)
 		{
 			arr.push_back(cv::Point2i{rand()%frame.cols, rand()%frame.rows});
 			pos.push_back(1e10f);
@@ -36,10 +47,12 @@ int blur(cv::Mat& frame, cv::Rect rect)
 		}
 	}
 	
+	int rec_count = 0;
 	for(int i=0; i<arr.size()-2; i+=2)
 	{
 		if(rect.contains(arr[i]) && rect.contains(arr[i+1]))
 		{
+			rec_count++;
 			pos[i] = 0.0f;
 		}else
 		{
@@ -48,6 +61,8 @@ int blur(cv::Mat& frame, cv::Rect rect)
 			if(pos[i] > 1e10) pos[i] = 1e10;
 		}
 	}
+	if(rec_count < 5)
+		return -1;
 	// cv::rectangle(frame, rect, color, thickness);
 	for(int i=0; i<arr.size()-2; i+=2)
 	{
