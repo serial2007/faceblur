@@ -6,31 +6,33 @@
 int blur(cv::Mat& frame, cv::Rect rect);
 cv::Mat captureScreen();
 
+bool blur_break = true;
 bool use_screen = false;
 bool use_camera = true;
+bool single_picture = false;
 bool captureWindow_window = false;
 bool no_effect = false;
 bool no_freeze = false;
+bool random_strength = 1000.0f;
 int camera_number = 0;
 
 int main(int argc, char* argv[]) {
+	char * pic_path;
 	for(int i=1; i<argc; i++)
 	{
-		if(strcmp(argv[i], "help")==0 || strcmp(argv[i], "-h")==0 || strcmp(argv[i], "-help")==0){
-			std::cout << "help:         获得帮助" << std::endl;
-			std::cout << "cam#:         使用摄像机 /dev/video#" << std::endl;
-			std::cout << "screen:       使用屏幕" << std::endl;
-			std::cout << "fullscreen:   使用全屏" << std::endl;
-			std::cout << "window:       截取一个窗口" << std::endl;
-			std::cout << "original:     不进行特效处理，用于调试目的" << std::endl;
-			std::cout << "unfreeze:     在检测人脸失败后不冻结图像" << std::endl;
-			return 0;
-		}
-		else if(strcmp(argv[i], "cam0") >= 0 && strcmp(argv[i], "cam99999") <= 0)
+		if(strcmp(argv[i], "camera=") >= 0 && strcmp(argv[i], "camera>") < 0)
 		{
 			use_screen = false;
 			use_camera = true;
-			camera_number = atoi(argv[i] + 3);
+			camera_number = atoi(argv[i] + 7);
+		}
+		else if(strcmp(argv[i], "picture=") >= 0 && strcmp(argv[i], "picture>") < 0)
+		{
+			use_screen = false;
+			use_camera = false;
+			single_picture = true;
+			pic_path = argv[i] + 8;
+			no_freeze = true;
 		}
 		else if(strcmp(argv[i], "screen") == 0 || strcmp(argv[i], "s") == 0)
 		{
@@ -61,6 +63,18 @@ int main(int argc, char* argv[]) {
 		{
 			no_freeze = true;
 		}
+		else  {
+			// if(strcmp(argv[i], "help")==0 || strcmp(argv[i], "h")==0)
+			std::cout << "help:         获得帮助" << std::endl;
+			std::cout << "camera=#:     使用摄像机 /dev/video#" << std::endl;
+			std::cout << "picture=#:    处理单张图片，路径为#" << std::endl;
+			std::cout << "screen:       使用屏幕" << std::endl;
+			std::cout << "fullscreen:   使用全屏" << std::endl;
+			std::cout << "window:       截取一个窗口" << std::endl;
+			std::cout << "original:     不进行特效处理，用于调试目的" << std::endl;
+			std::cout << "unfreeze:     在检测人脸失败后不冻结图像" << std::endl;
+			return 0;
+		}
 	}
 	
 	cv::VideoCapture* cap;
@@ -88,15 +102,24 @@ int main(int argc, char* argv[]) {
 	cv::Mat save;
     std::vector<cv::Rect> faces;
 	cv::dnn::Net net = cv::dnn::readNetFromCaffe("deploy.prototxt", "res10_300x300_ssd_iter_140000.caffemodel");
+	cv::Mat single_picture_mat;
+	if(single_picture)
+	{
+		single_picture_mat = cv::imread(pic_path);
+	}
 
     while (true) {
         if(use_camera)
 		{
 			*cap >> frame;
 		}
-		else
+		else if(use_screen)
 		{
 			frame = captureScreen();
+		}
+		else if(single_picture)
+		{
+			frame = single_picture_mat;
 		}
         if (frame.empty()) break;
 
