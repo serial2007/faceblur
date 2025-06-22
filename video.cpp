@@ -13,7 +13,7 @@ bool single_picture = false;
 bool captureWindow_window = false;
 bool no_effect = false;
 bool no_freeze = false;
-bool random_strength = 1000.0f;
+bool random_strength = 1000000.0f;
 int camera_number = 0;
 
 int main(int argc, char* argv[]) {
