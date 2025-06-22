@@ -9,28 +9,45 @@
 extern bool blur_break;
 
 inline bool overlapped(const cv::Rect rect1, const cv::Rect rect2) {
-    auto w = (rect1 & rect2);
-	return w.height > 0 && w.width > 0;
+    int x1_start=rect1.x, x1_end=rect1.x + rect1.width;
+    int x2_start=rect2.x, x2_end=rect2.x + rect2.width;
+    int y1_start=rect1.y, y1_end=rect1.y + rect1.height;
+    int y2_start=rect2.y, y2_end=rect2.y + rect2.height;
+	return (!(x1_end<x2_start || x2_end<x1_start))
+		&& (!(y1_end<y2_start || y2_end<y1_start));
+}
+template <typename T> inline void _bound(T& val, T min, T max)
+{
+	if(val < min) val=min;
+	else if(val > max) val=max;
+}
+inline void _debug_cast(bool s)
+{
+	if(!s)
+	{
+		std::cout << "debug failed" << std::endl;
+		exit(114);
+	}
 }
 
-int newrand(int min, int max, int mid, float strength = 1.0f) {
+
+int newrand(int min, int max, int mid, int& _strength) {
+	int strength = 200;
     if (min > max) return min;
-
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-
-    // 每次调用时重新创建分布对象
-    std::normal_distribution<> d(mid, strength);
-
-    int result;
-    do {
-        result = static_cast<int>(std::round(d(gen)));
-    } while (result < min || result > max);
-
-    return result;
+	int res;
+	do
+	{
+		int r=rand() % (strength*2) - strength;
+		res = mid + r;
+		strength += 5;
+	}
+	while(res<min || res>max);
+	// _strength += 30;
+	return res;
 }
 
-extern float random_strength;
+extern int random_strength;
+int local_strength;
 int blur(cv::Mat& frame, cv::Rect rect)
 {	
 	auto frame_old = frame.clone();
@@ -76,51 +93,66 @@ int blur(cv::Mat& frame, cv::Rect rect)
 			pos.push_back(1e10f);
 		}
 	}
-	else{
-		for(int64_t i=0; i<arrlen; i+=4)
+	{
+		for(int64_t i=0; i<arrlen; i++)
 		{
-			if(i%4 < 3)
+			if(i==0)
+			{
+				if(rect.x < 10) arr[0].x=0;
+				else arr[0].x = std::max(std::ceilf(rect.x / 30.0f) * 30, 0.0f);
+				if(rect.y < 10) arr[0].y=0;
+				else arr[0].y = std::max(std::ceilf(rect.y / 30.0f) * 30, 0.0f);
+			}
+			else if(i==1)
+			{
+				if(rect.x+10 > frame.cols) arr[1].x=frame.cols-1;
+				else arr[1].x = std::min(std::floorf((rect.x+rect.width) / 30.0f) * 30, (float)frame.cols);
+				if(rect.y+10 > frame.rows) arr[1].y=frame.rows-1;
+				else arr[1].y = std::min(std::floorf((rect.y+rect.height) / 30.0f) * 30, (float)frame.rows);
+			}
+			else if(i%4 < 3)
 			{
 				if(rand() % 50 == 0)
 				{
-					arr[i].x = (arr[i].x + rand() % 3 - 1) % frame.cols;
-					arr[i].y = (arr[i].y + rand() % 3 - 1) % frame.rows;
+					arr[i].x = (arr[i].x + rand() % 3 - 1);
+					_bound(arr[i].x, 0, frame.cols-1);
+					arr[i].y = (arr[i].y + rand() % 3 - 1);
+					_bound(arr[i].y, 0, frame.rows-1);
+				}
+				if(i%4==1)
+				{
+					if(arr[i-1].x > arr[i].x) std::swap(arr[i-1].x, arr[i].x);
+					if(arr[i-1].y > arr[i].y) std::swap(arr[i-1].y, arr[i].y);
 				}
 			}else
 			{
 				int it=0;
 				arr[i].x = arr[i-1].x + arr[i-2].x - arr[i-3].x;
 				arr[i].y = arr[i-1].y + arr[i-2].y - arr[i-3].y;
-				while(arr[i-1].x<0 || overlapped(rect, cv::Rect{arr[i-1], arr[i]}) ||
+				local_strength = 30;
+				while(arr[i-1].x==999999 || overlapped(rect, cv::Rect{arr[i-1], arr[i]}) ||
 					arr[i].x >= frame.cols || arr[i].y >= frame.rows)
 				{
-					if(it++ > 10)
+					if(it++ )
 					{
-						arr[i-1].x=-1;	arr[i-1].y=-1;
-						arr[i].x  =-1;  arr[i-1].y=-1;
+						arr[i-1].x=999999;	arr[i-1].y=999999;
+						arr[i].x  =999999;  arr[i].y  =999999;
+						break;
 					}
 					
-					arr[i-1].x = newrand(0, frame.cols, (arr[i-2].x+arr[i-3].x)/2, random_strength);
-					arr[i-1].y = newrand(0, frame.rows, (arr[i-2].y+arr[i-3].y)/2, random_strength);
-
-
+					arr[i-1].x = newrand(0, frame.cols-1, (arr[i-2].x+arr[i-3].x)/2, local_strength);
+					arr[i-1].y = newrand(0, frame.rows-1, (arr[i-2].y+arr[i-3].y)/2, local_strength);
+					// arr[i-1].x = rand() % frame.cols;
+					// arr[i-1].y = rand() % frame.rows;
 					arr[i].x = arr[i-1].x + arr[i-2].x - arr[i-3].x;
 					arr[i].y = arr[i-1].y + arr[i-2].y - arr[i-3].y;
 				}
 			}
 		}
 	}
-	if(arr.size() >= 2)
-	{
-		arr[0].x = std::max(std::ceilf(rect.x / 30.0f) * 30, 0.0f);
-		arr[0].y = std::max(std::ceilf(rect.y / 30.0f) * 30, 0.0f);
-		arr[1].x = std::min(std::floorf((rect.x+rect.width) / 30.0f) * 30, (float)frame.cols);
-		arr[1].y = std::min(std::floorf((rect.y+rect.height) / 30.0f) * 30, (float)frame.rows);
-		
-	}
 	
 	int rec_count = 0;
-	for(int i=0; i<arrlen; i+=2)
+	for(int64_t i=0; i<arrlen; i+=2)
 	{
 		if(rect.contains(arr[i]) && rect.contains(arr[i+1]))
 		{
@@ -137,7 +169,7 @@ int blur(cv::Mat& frame, cv::Rect rect)
 	// cv::rectangle(frame, rect, color, thickness);
 	
 	int j=0;
-	for(int i=0; i<arrlen; i+=4)
+	for(int64_t i=0; i<arrlen; i+=4)
 	{
 		if(pos[i] < 100000 || i==0)
 		{
@@ -146,17 +178,24 @@ int blur(cv::Mat& frame, cv::Rect rect)
 			cv::Rect2i r = {arr[i], arr[i+1]};
 			int startx = arr[i+2].x;
 			int starty = arr[i+2].y;
-			if(startx<0 || starty < 0)
+			
+
+			if(startx<0 || startx==999999)
 				bad_flg = true;
 			auto color = frame_old.at<cv::Vec3b>({(arr[i].x+arr[i+1].x)/2, (arr[i].y+arr[i+1].y)/2});
 
-
-
-			if(blur_break)
+			if(blur_break && !bad_flg)
 			{
 				if(startx+r.width < frame.cols && starty+r.height < frame.rows)
 				{
-					frame(cv::Rect2i(cv::Point2i{startx, starty}, cv::Point2i{startx+r.width, starty+r.height}))
+					if(!(arr[i+1].x-arr[i].x) == (arr[i+3].x-arr[i+2].x))
+					{
+						std::cout << arr[i+1].x<<' '<<arr[i].x<<' '<<arr[i+3].x<<' '<<arr[i+2].x<<std::endl;
+						// exit(114);
+					}
+
+					// _debug_cast((arr[i+1].x-arr[i].x) == (arr[i+3].x-arr[i+2].x));
+					frame_old(cv::Rect2i(cv::Point2i{startx, starty}, cv::Point2i{startx+r.width, starty+r.height}))
 					.copyTo(frame(r));
 					j++;
 				} else
