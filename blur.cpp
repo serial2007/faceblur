@@ -9,11 +9,26 @@
 extern bool blur_break;
 
 inline bool overlapped(const cv::Rect rect1, const cv::Rect rect2) {
-    bool x_overlap = (rect1.x < rect2.x + rect2.width) && (rect1.x + rect1.width > rect2.x);
-    bool y_overlap = (rect1.y < rect2.y + rect2.height) && (rect1.y + rect1.height > rect2.y);
-    return x_overlap && y_overlap;
+    auto w = (rect1 & rect2);
+	return w.height > 0 && w.width > 0;
 }
 
+int newrand(int min, int max, int mid, float strength = 1.0f) {
+    if (min > max) return min;
+
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+
+    // 每次调用时重新创建分布对象
+    std::normal_distribution<> d(mid, strength);
+
+    int result;
+    do {
+        result = static_cast<int>(std::round(d(gen)));
+    } while (result < min || result > max);
+
+    return result;
+}
 
 extern float random_strength;
 int blur(cv::Mat& frame, cv::Rect rect)
@@ -53,8 +68,8 @@ int blur(cv::Mat& frame, cv::Rect rect)
 			arr.push_back(cv::Point2i{m2,n2});
 			pos.push_back(1e10f);
 
-			int m3=rand() % frame.cols;
-			int n3=rand() % frame.rows;
+			int m3 = newrand(0, frame.cols, (arr[i].x+arr[i+1].x)/2, random_strength);
+			int n3 = newrand(0, frame.rows, (arr[i].y+arr[i+1].y)/2, random_strength);
 			arr.push_back(cv::Point2i{m3, n3});
 			pos.push_back(1e10f);
 			arr.push_back(cv::Point2i{m3, n3});
@@ -85,8 +100,8 @@ int blur(cv::Mat& frame, cv::Rect rect)
 						arr[i].x  =-1;  arr[i-1].y=-1;
 					}
 					
-					arr[i-1].x = rand() % frame.cols;
-					arr[i-1].y = rand() % frame.rows;
+					arr[i-1].x = newrand(0, frame.cols, (arr[i-2].x+arr[i-3].x)/2, random_strength);
+					arr[i-1].y = newrand(0, frame.rows, (arr[i-2].y+arr[i-3].y)/2, random_strength);
 
 
 					arr[i].x = arr[i-1].x + arr[i-2].x - arr[i-3].x;
@@ -127,7 +142,7 @@ int blur(cv::Mat& frame, cv::Rect rect)
 		if(pos[i] < 100000 || i==0)
 		{
 			bool bad_flg = false;
-			if(j++ > 20) break;
+			if(j > 18) break;
 			cv::Rect2i r = {arr[i], arr[i+1]};
 			int startx = arr[i+2].x;
 			int starty = arr[i+2].y;
@@ -143,6 +158,7 @@ int blur(cv::Mat& frame, cv::Rect rect)
 				{
 					frame(cv::Rect2i(cv::Point2i{startx, starty}, cv::Point2i{startx+r.width, starty+r.height}))
 					.copyTo(frame(r));
+					j++;
 				} else
 					bad_flg = true;
 			}
