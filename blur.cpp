@@ -51,7 +51,7 @@ int local_strength;
 int blur(cv::Mat& frame, cv::Rect rect)
 {	
 	auto frame_old = frame.clone();
-    rect = rect & cv::Rect(0, 0, frame.cols, frame.rows);
+    rect = rect & cv::Rect(0, 0, frame.cols-1, frame.rows-1);
     if (rect.width <= 20 || rect.height <= 20) return -1;
 	
 	static bool init = true;
@@ -106,9 +106,9 @@ int blur(cv::Mat& frame, cv::Rect rect)
 			else if(i==1)
 			{
 				if(rect.x+10 > frame.cols) arr[1].x=frame.cols-1;
-				else arr[1].x = std::min(std::floorf((rect.x+rect.width) / 30.0f) * 30, (float)frame.cols);
+				else arr[1].x = std::min((int)std::floorf((rect.x+rect.width) / 30.0f) * 30, frame.cols-1);
 				if(rect.y+10 > frame.rows) arr[1].y=frame.rows-1;
-				else arr[1].y = std::min(std::floorf((rect.y+rect.height) / 30.0f) * 30, (float)frame.rows);
+				else arr[1].y = std::min((int)std::floorf((rect.y+rect.height) / 30.0f) * 30, frame.rows-1);
 			}
 			else if(i%4 < 3)
 			{

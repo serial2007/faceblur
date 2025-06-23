@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     const std::string window_name = "Camera";
     cv::namedWindow(window_name, cv::WINDOW_NORMAL);
 	static int Significance = 50;
-	cv::createTrackbar("Significance", window_name, &Significance, 100, nullptr);
+	cv::createTrackbar("Significance", window_name, &Significance, 100);
 	
     cv::Mat frame, gray;
 	cv::Mat save;
@@ -159,12 +159,19 @@ for (int i = 0; i < detectionMat.rows; i++) {
 		bool errflg=false;
 		if(!no_effect)
         {
-			for (const auto& face : faces) {
-				// cv::rectangle(frame, face, cv::Scalar(0, 255, 0), 2);
-				if(blur(frame, face)<0){
-					errflg=true;
-				}
-        	}
+			try
+			{
+				for (const auto& face : faces) {
+					// cv::rectangle(frame, face, cv::Scalar(0, 255, 0), 2);
+					if(blur(frame, face)<0){
+						errflg=true;
+					}
+        		}
+			}
+			catch (const cv::Exception& e) {
+				std::cerr << "OpenCV error: " << e.what() << std::endl;
+				continue;
+			}
 		}
 		if((faces.size() > 0 && !errflg) || no_effect)
 		{
