@@ -17,75 +17,75 @@ int random_strength = 30;
 int camera_number = 0;
 
 int main(int argc, char* argv[]) {
-	char * pic_path;
-	for(int i=1; i<argc; i++)
-	{
-		if(strcmp(argv[i], "camera=") >= 0 && strcmp(argv[i], "camera>") < 0)
-		{
-			use_screen = false;
-			use_camera = true;
-			camera_number = atoi(argv[i] + 7);
-		}
-		else if(strcmp(argv[i], "picture=") >= 0 && strcmp(argv[i], "picture>") < 0)
-		{
-			use_screen = false;
-			use_camera = false;
-			single_picture = true;
-			pic_path = argv[i] + 8;
-			no_freeze = true;
-		}
-		else if(strcmp(argv[i], "screen") == 0 || strcmp(argv[i], "s") == 0)
-		{
-			use_screen = true;
-			use_camera = false;
-			camera_number = 0;
-		}
-		else if(strcmp(argv[i], "window") == 0 || strcmp(argv[i], "w") == 0)
-		{
-			use_screen = true;
-			use_camera = false;
-			captureWindow_window = true;
-			camera_number = 0;
-		}
-		else if(strcmp(argv[i], "fullscreen") == 0 || strcmp(argv[i], "f") == 0)
-		{
-			use_screen = true;
-			use_camera = false;
-			captureWindow_window = false;
-			camera_number = 0;
-		}
-		else if(strcmp(argv[i], "original") == 0 || strcmp(argv[i], "o") == 0)
-		{
-			no_effect = true;
-			no_freeze = true;
-		}
-		else if(strcmp(argv[i], "unfreeze") == 0 || strcmp(argv[i], "u") == 0)
-		{
-			no_freeze = true;
-		}
-		else  {
-			// if(strcmp(argv[i], "help")==0 || strcmp(argv[i], "h")==0)
-			std::cout << "help:         获得帮助" << std::endl;
-			std::cout << "camera=#:     使用摄像机 /dev/video#" << std::endl;
-			std::cout << "picture=#:    处理单张图片，路径为#" << std::endl;
-			std::cout << "screen:       使用屏幕" << std::endl;
-			std::cout << "fullscreen:   使用全屏" << std::endl;
-			std::cout << "window:       截取一个窗口" << std::endl;
-			std::cout << "original:     不进行特效处理，用于调试目的" << std::endl;
-			std::cout << "unfreeze:     在检测人脸失败后不冻结图像" << std::endl;
-			return 0;
-		}
-	}
-	
-	cv::VideoCapture* cap;
-	if(use_camera)
+    char * pic_path;
+    for(int i=1; i<argc; i++)
     {
-		cap = new cv::VideoCapture(camera_number);
-		if (!cap->isOpened()) {
-			std::cerr << "无法打开摄像头 /dev/video" << camera_number << std::endl;
-			return -1;
-    	}
-	}
+        if(strcmp(argv[i], "camera=") >= 0 && strcmp(argv[i], "camera>") < 0)
+        {
+            use_screen = false;
+            use_camera = true;
+            camera_number = atoi(argv[i] + 7);
+        }
+        else if(strcmp(argv[i], "picture=") >= 0 && strcmp(argv[i], "picture>") < 0)
+        {
+            use_screen = false;
+            use_camera = false;
+            single_picture = true;
+            pic_path = argv[i] + 8;
+            no_freeze = true;
+        }
+        else if(strcmp(argv[i], "screen") == 0 || strcmp(argv[i], "s") == 0)
+        {
+            use_screen = true;
+            use_camera = false;
+            camera_number = 0;
+        }
+        else if(strcmp(argv[i], "window") == 0 || strcmp(argv[i], "w") == 0)
+        {
+            use_screen = true;
+            use_camera = false;
+            captureWindow_window = true;
+            camera_number = 0;
+        }
+        else if(strcmp(argv[i], "fullscreen") == 0 || strcmp(argv[i], "f") == 0)
+        {
+            use_screen = true;
+            use_camera = false;
+            captureWindow_window = false;
+            camera_number = 0;
+        }
+        else if(strcmp(argv[i], "original") == 0 || strcmp(argv[i], "o") == 0)
+        {
+            no_effect = true;
+            no_freeze = true;
+        }
+        else if(strcmp(argv[i], "unfreeze") == 0 || strcmp(argv[i], "u") == 0)
+        {
+            no_freeze = true;
+        }
+        else  {
+            // if(strcmp(argv[i], "help")==0 || strcmp(argv[i], "h")==0)
+            std::cout << "help:         获得帮助" << std::endl;
+            std::cout << "camera=#:     使用摄像机 /dev/video#" << std::endl;
+            std::cout << "picture=#:    处理单张图片，路径为#" << std::endl;
+            std::cout << "screen:       使用屏幕" << std::endl;
+            std::cout << "fullscreen:   使用全屏" << std::endl;
+            std::cout << "window:       截取一个窗口" << std::endl;
+            std::cout << "original:     不进行特效处理，用于调试目的" << std::endl;
+            std::cout << "unfreeze:     在检测人脸失败后不冻结图像" << std::endl;
+            return 0;
+        }
+    }
+    
+    cv::VideoCapture* cap;
+    if(use_camera)
+    {
+        cap = new cv::VideoCapture(camera_number);
+        if (!cap->isOpened()) {
+            std::cerr << "无法打开摄像头 /dev/video" << camera_number << std::endl;
+            return -1;
+        }
+    }
 
     // cv::CascadeClassifier face_cascade;
     // if (!face_cascade.load("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml")) {
@@ -95,32 +95,32 @@ int main(int argc, char* argv[]) {
 
     const std::string window_name = "Camera";
     cv::namedWindow(window_name, cv::WINDOW_NORMAL);
-	static int Significance = 50;
-	cv::createTrackbar("Significance", window_name, &Significance, 100);
-	
+    static int Significance = 50;
+    cv::createTrackbar("Significance", window_name, &Significance, 100);
+    
     cv::Mat frame, gray;
-	cv::Mat save;
+    cv::Mat save;
     std::vector<cv::Rect> faces;
-	cv::dnn::Net net = cv::dnn::readNetFromCaffe("deploy.prototxt", "res10_300x300_ssd_iter_140000.caffemodel");
-	cv::Mat single_picture_mat;
-	if(single_picture)
-	{
-		single_picture_mat = cv::imread(pic_path);
-	}
+    cv::dnn::Net net = cv::dnn::readNetFromCaffe("deploy.prototxt", "res10_300x300_ssd_iter_140000.caffemodel");
+    cv::Mat single_picture_mat;
+    if(single_picture)
+    {
+        single_picture_mat = cv::imread(pic_path);
+    }
 
     while (true) {
         if(use_camera)
-		{
-			*cap >> frame;
-		}
-		else if(use_screen)
-		{
-			frame = captureScreen();
-		}
-		else if(single_picture)
-		{
-			frame = single_picture_mat;
-		}
+        {
+            *cap >> frame;
+        }
+        else if(use_screen)
+        {
+            frame = captureScreen();
+        }
+        else if(single_picture)
+        {
+            frame = single_picture_mat;
+        }
         if (frame.empty()) break;
 
         cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
@@ -128,13 +128,13 @@ int main(int argc, char* argv[]) {
 
         // 检测人脸
         // face_cascade.detectMultiScale(
-		// 	gray,
-		// 	faces,
-		// 	1.1f + (float)scale_factor * 0.1,          // scaleFactor：每次图像尺寸减小的比例（越小越精确，但慢）
-		// 	minNeighbors + 1,            // minNeighbors：每个候选矩形保留前需要的相邻矩形数（越大越严格）
-		// 	0,            				// flags（一般为0即可）
-		// 	cv::Size(min_size, min_size)  // minSize：检测的最小人脸尺寸（避免误检小目标）
-		// );
+        // 	gray,
+        // 	faces,
+        // 	1.1f + (float)scale_factor * 0.1,          // scaleFactor：每次图像尺寸减小的比例（越小越精确，但慢）
+        // 	minNeighbors + 1,            // minNeighbors：每个候选矩形保留前需要的相邻矩形数（越大越严格）
+        // 	0,            				// flags（一般为0即可）
+        // 	cv::Size(min_size, min_size)  // minSize：检测的最小人脸尺寸（避免误检小目标）
+        // );
 
 cv::Mat blob = cv::dnn::blobFromImage(frame, 1.0, cv::Size(300, 300), cv::Scalar(104, 177, 123), false, false);
 net.setInput(blob);
@@ -156,42 +156,42 @@ for (int i = 0; i < detectionMat.rows; i++) {
 
 
 
-		bool errflg=false;
-		if(!no_effect)
+        bool errflg=false;
+        if(!no_effect)
         {
-			try
-			{
-				for (const auto& face : faces) {
-					// cv::rectangle(frame, face, cv::Scalar(0, 255, 0), 2);
-					if(blur(frame, face)<0){
-						errflg=true;
-					}
-        		}
-			}
-			catch (const cv::Exception& e) {
-				std::cerr << "OpenCV error: " << e.what() << std::endl;
-				continue;
-			}
-		}
-		if((faces.size() > 0 && !errflg) || no_effect)
-		{
-			save = frame.clone();
-		}
-		if((faces.size() > 0 && !errflg) || no_effect || no_freeze)
+            try
+            {
+                for (const auto& face : faces) {
+                    // cv::rectangle(frame, face, cv::Scalar(0, 255, 0), 2);
+                    if(blur(frame, face)<0){
+                        errflg=true;
+                    }
+                }
+            }
+            catch (const cv::Exception& e) {
+                std::cerr << "OpenCV error: " << e.what() << std::endl;
+                continue;
+            }
+        }
+        if((faces.size() > 0 && !errflg) || no_effect)
+        {
+            save = frame.clone();
+        }
+        if((faces.size() > 0 && !errflg) || no_effect || no_freeze)
         cv::imshow(window_name, frame);
-		else if(!save.empty())
-		cv::imshow(window_name, save);
+        else if(!save.empty())
+        cv::imshow(window_name, save);
 
         int key = cv::waitKey(1);
         if (key == 27 || cv::getWindowProperty(window_name, cv::WND_PROP_VISIBLE) < 1) {
             break;
         }
     }
-	if(use_camera)
+    if(use_camera)
     {
-		cap->release();
-		delete cap;
-	}
+        cap->release();
+        delete cap;
+    }
     cv::destroyAllWindows();
     return 0;
 }

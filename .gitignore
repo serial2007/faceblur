@@ -6,3 +6,9 @@ Makefile
 CTestTestfile.cmake
 faceblur
 res10_300x300_ssd_iter_140000.caffemodel
+
+x64/
+faceblur.dir/
+Debug/
+build/
+.vs/
